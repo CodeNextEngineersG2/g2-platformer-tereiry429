@@ -111,7 +111,7 @@ function buildLevel() {
   // best method is to draw sprites from left to right on the screen
   createPlatform(50, 690, 5);
   createCollectable(300, 340);
-  createMonster(500, 600, 0);
+  createMonster(500, 600, -0.5);
 }
 
 // Creates a player sprite and adds animations and a collider to it
@@ -184,6 +184,9 @@ function applyGravity() {
     if(player.previousPosition.y !== player.position.y) {
       playerGrounded = false;
     }
+    if(player.position.y >= height){
+      executeLoss();
+    }
     for(var i = 0; i < monsters.length; i++) {
       monsters[i].velocity.y += GRAVITY;
       if(monsters[i].position.y >= height) {
@@ -198,6 +201,10 @@ function applyGravity() {
 function checkCollisions() {
     player.collide(platforms, platformCollision);
     monsters.collide(platforms, platformCollision);
+    player.collide(monsters, playerMonsterCollision);
+
+    //collide(target, callback);
+
 }
 
 // Callback function that runs when the player or a monster collides with a
@@ -218,6 +225,25 @@ function platformCollision(sprite, platform) {
 
 // Callback function that runs when the player collides with a monster.
 function playerMonsterCollision(player, monster) {
+
+    if(player.touching.bottom) {
+monster.remove();
+var defeatedMonster = createSprite(monster.position.x, monster.position.y, 0, 0);
+defeatedMonster.addImage(monsterDefeatImage);
+defeatedMonster.mirrorX(monster.mirrorX());
+defeatedMonster.scale = 0.25;
+defeatedMonster.life = 40;
+currentJumpTime = MAX_JUMP_TIME;
+currentJumpForce = DEFAULT_JUMP_FORCE;
+player.velocity.y = currentJumpForce;
+millis = new Date();
+score++;
+
+
+    }
+    else {
+      executeLoss();
+    }
 
 }
 
@@ -353,5 +379,6 @@ function executeWin() {
 // a monster). Anything can happen here, but the most important thing is that we
 // call resetGame() after a short delay.
 function executeLoss() {
-
+noLoop();
+setTimeout(resetGame, 1000);
 }
