@@ -110,8 +110,19 @@ function buildLevel() {
   // create platforms, monsters, and any other game objects
   // best method is to draw sprites from left to right on the screen
   createPlatform(50, 690, 5);
-  createCollectable(300, 340);
+  createCollectable(300, 390);
   createMonster(500, 600, -0.5);
+  createPlatform(800, 675, 5);
+  createCollectable(1000, 390);
+  createMonster(550, 600, -0.5);
+  createMonster(600, 600, -0.5);
+  createPlatform(975, 575, 5);
+  createMonster(900, 600, -0.5);
+  createPlatform(1700, 450, 5);
+
+
+
+
 }
 
 // Creates a player sprite and adds animations and a collider to it
@@ -202,6 +213,7 @@ function checkCollisions() {
     player.collide(platforms, platformCollision);
     monsters.collide(platforms, platformCollision);
     player.collide(monsters, playerMonsterCollision);
+    player.overlap(collectables, getCollectable);
 
     //collide(target, callback);
 
@@ -255,7 +267,7 @@ function getCollectable(player, collectable) {
 // Updates the player's position and current animation by calling
 // all of the relevant "check" functions below.
 function updatePlayer() {
-  //console.log("Player x: " + player.position.x + " Player y: " + player.position.y);
+  console.log("Player x: " + player.position.x + " Player y: " + player.position.y);
   checkIdle();
   checkFalling();
   checkJumping();
@@ -351,6 +363,11 @@ function keyTyped() {
 function updateDisplay() {
   // clear the screen
   background(0, 0, 0);
+  camera.position.x = player.position.x;
+
+
+
+
 
   // briefly turn camera off before setting any static images or text
   camera.off()
