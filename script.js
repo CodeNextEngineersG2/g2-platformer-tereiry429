@@ -1,7 +1,7 @@
 // UI Variables
 var gameScreen;
 var score;
-
+var flipSound, matchSound, nopeSound, winSound, loseSound, bgMusic;
 // Platform Variables
 var platforms; // p5.play sprite group
 var platformImageFirst, platformImageMiddle, platformImageLast;
@@ -12,7 +12,7 @@ var playerIdleAnimation, playerRunAnimation, playerJumpAnimation, playerFallAnim
 var playerGrounded; // boolean
 var playerStartX, playerStartY;
 
-// Monster Variables
+// monster Variables
 var monsters; // p5.play sprite group
 var monsterWalkAnimation;
 var monsterDefeatImage;
@@ -26,7 +26,7 @@ var goalImage;
 // Physics Variables
 const GRAVITY = 0.5;
 const DEFAULT_VELOCITY = 5;
-const DEFAULT_JUMP_FORCE = -5;
+const DEFAULT_JUMP_FORCE = -6;
 var currentJumpForce;
 
 // Timing and Control Variables
@@ -48,7 +48,7 @@ window.addEventListener("keydown", function(e) {
 
 function preload() {
   // load background image
-  backgroundImage = loadImage("assets/img/backgrounds/BG.png");
+  backgroundImage = loadImage("assets/img/backgrounds/BcG.jpg");
 
   // load platform images
   platformImageFirst = loadImage("assets/img/tiles/Tile (14).png");
@@ -74,10 +74,22 @@ function setup() {
   gameScreen = createCanvas(1280, 720);
   gameScreen.parent("#game-screen");
   backgroundImage.resize(width, height);
-  playerStartX = 50;
+  playerStartX = 200;
   playerStartY = 300;
   resetGame();
 }
+
+function toggleMusic() {
+  // Conditional: if bgMusic is playing, then pause it. Otherwise, loop it.
+musicButton.mousePressed(toggleMusic);
+}
+
+
+
+
+
+
+
 
 function draw() {
   applyGravity();
@@ -97,6 +109,7 @@ function resetGame() {
   playerGrounded = false;
   score = 0;
   gamePaused = false;
+  //isDead = false;
   loop();
 }
 
@@ -109,20 +122,24 @@ function buildLevel() {
 
   // create platforms, monsters, and any other game objects
   // best method is to draw sprites from left to right on the screen
-  createPlatform(50, 690, 5);
+  createPlatform(150, 750, 5);
   createCollectable(300, 390);
-  createMonster(500, 600, -0.5);
+  createmonster(500, 600, -0.5);
   createPlatform(800, 675, 5);
   createCollectable(1000, 390);
-  createMonster(550, 600, -0.5);
-  createMonster(600, 600, -0.5);
-  createPlatform(975, 575, 5);
-  createMonster(900, 600, -0.5);
-  createPlatform(1700, 450, 5);
-
-
-
-
+  createmonster(550, 600, -0.5);
+  createmonster(600, 600, -0.5);
+  createPlatform(1500, 575, 2);
+  createmonster(900, 600, -0.5);
+  createPlatform(1900, 475, 5);
+  createmonster(2300, 400, -0.5);
+  createmonster(2450, 400, -0.5);
+  createmonster(20, 400, -0.5);
+  createmonster(2700, 350, -0.5);
+  createCollectable(2500, 300);
+  createPlatform(2600, 370, 2);
+  goal = createSprite(2670, 260);
+  goal.addImage(goalImage);
 }
 
 // Creates a player sprite and adds animations and a collider to it
@@ -132,6 +149,7 @@ function createPlayer() {
   player.addAnimation("run", playerRunAnimation).looping = true;
   player.addAnimation("jump", playerJumpAnimation).looping = false;
   player.addAnimation("fall", playerFallAnimation).looping = false;
+
   player.scale = 0.25;
   player.setCollider("rectangle", 0, 0, 250, 490);
   //player.debug = true;
@@ -160,7 +178,7 @@ function createPlatform(x, y, len) {
 
 // Creates a monster sprite and adds animations and a collider to it.
 // Also sets the monster's initial velocity.
-function createMonster(x, y, velocity) {
+function createmonster(x, y, velocity) {
   var monster = createSprite(x, y, 0, 0);
   monster.addToGroup(monsters);
   monster.addAnimation("walk", monsterWalkAnimation).loop = true;
@@ -212,8 +230,9 @@ function applyGravity() {
 function checkCollisions() {
     player.collide(platforms, platformCollision);
     monsters.collide(platforms, platformCollision);
-    player.collide(monsters, playerMonsterCollision);
+    player.collide(monsters, playermonsterCollision);
     player.overlap(collectables, getCollectable);
+    player.overlap(goal, executeWin);
 
     //collide(target, callback);
 
@@ -236,15 +255,15 @@ function platformCollision(sprite, platform) {
 }
 
 // Callback function that runs when the player collides with a monster.
-function playerMonsterCollision(player, monster) {
+function playermonsterCollision(player, monster) {
 
     if(player.touching.bottom) {
 monster.remove();
-var defeatedMonster = createSprite(monster.position.x, monster.position.y, 0, 0);
-defeatedMonster.addImage(monsterDefeatImage);
-defeatedMonster.mirrorX(monster.mirrorX());
-defeatedMonster.scale = 0.25;
-defeatedMonster.life = 40;
+var defeatedmonster = createSprite(monster.position.x, monster.position.y, 0, 0);
+defeatedmonster.addImage(monsterDefeatImage);
+defeatedmonster.mirrorX(monster.mirrorX());
+defeatedmonster.scale = 0.25;
+defeatedmonster.life = 40;
 currentJumpTime = MAX_JUMP_TIME;
 currentJumpForce = DEFAULT_JUMP_FORCE;
 player.velocity.y = currentJumpForce;
@@ -261,7 +280,10 @@ score++;
 
 // Callback function that runs when the player overlaps with a collectable.
 function getCollectable(player, collectable) {
-
+  if(player.touching){
+    collectable.remove();
+    score++;
+  }
 }
 
 // Updates the player's position and current animation by calling
@@ -279,8 +301,8 @@ function updatePlayer() {
 // x velocity to 0.
 function checkIdle() {
   if(!keyIsDown(LEFT_ARROW) && !keyIsDown(RIGHT_ARROW) && playerGrounded) {
-    player.changeAnimation("idle");
     player.velocity.x = 0;
+    player.changeAnimation("idle");
   }
 }
 
@@ -336,6 +358,9 @@ function keyPressed() {
     player.velocity.y = currentJumpForce;
     millis = new Date();
   }
+  if(keyCode == "32" && playerGrounded){
+    player.changeAnimation("slash");
+  }
 }
 
 // Check if the player has released the up arrow key. If the player's y velocity
@@ -383,12 +408,26 @@ function updateDisplay() {
   // turn camera back on
   camera.on();
 
+  camera.position.x = player.position.x;
+
+  for(i = 0; i < collectables.length; i++){
+    collectables[i].rotation += 5;
+  }
+}
+function loadSounds() {
+sound.play(); // plays the sound just once
+sound.loop(); // plays the sound in an endless loop
+sound.pause(); // pauses the sound
+sound.setVolume(); // set the volume of the song (1.0 is max, 0.0 is min).
+sound.isPlaying(); // returns true if the sound is currently playing, false otherwise
 }
 
 // Called when the player has won the game (e.g., reached the goal at the end).
 // Anything can happen here, but the most important thing is that we call resetGame()
 // after a short delay.
 function executeWin() {
+  noLoop();
+  setTimeout(resetGame, 1000)
 
 }
 
